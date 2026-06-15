@@ -1,0 +1,2 @@
+C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/_deps/picotool-build/enc_bootloader/CMakeFiles/edit_cache.dir
+C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/_deps/picotool-build/enc_bootloader/CMakeFiles/rebuild_cache.dir

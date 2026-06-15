@@ -1,0 +1,35 @@
+name: Build Firmware
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3
+
+      - name: Clone Pico SDK
+        run: |
+          git clone --depth 1 --branch 1.5.1 https://github.com/raspberrypi/pico-sdk.git /opt/pico-sdk
+          cd /opt/pico-sdk && git submodule update --init --depth 1
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake .. -DPICO_SDK_PATH=/opt/pico-sdk -DPICO_BOARD=pico_w
+          make -j$(nproc)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bar_tracker-firmware
+          path: build/bar_tracker.uf2
+          retention-days: 30

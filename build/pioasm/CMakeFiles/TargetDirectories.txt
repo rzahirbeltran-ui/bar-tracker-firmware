@@ -1,7 +1,0 @@
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/pioasm.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/edit_cache.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/rebuild_cache.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/list_install_components.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/install.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/install/local.dir
-C:/Users/rzahi/OneDrive/Desktop/Tracker/firmware/build/pioasm/CMakeFiles/install/strip.dir

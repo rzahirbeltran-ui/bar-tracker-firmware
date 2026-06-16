@@ -2,6 +2,7 @@
 #include "hardware/i2c.h"
 
 static constexpr uint8_t ADDR         = 0x68;
+static constexpr uint8_t WHO_AM_I     = 0x75;
 static constexpr uint8_t PWR_MGMT_1   = 0x6B;
 static constexpr uint8_t SMPLRT_DIV   = 0x19;
 static constexpr uint8_t CONFIG_REG   = 0x1A;
@@ -17,11 +18,18 @@ void MPU6050::write_reg(uint8_t reg, uint8_t val) {
 }
 
 bool MPU6050::init() {
-    write_reg(PWR_MGMT_1,   0x01);  // Despierta; usa PLL del giroscopio X como clock
-    write_reg(CONFIG_REG,   0x02);  // DLPF_CFG=2 → BW accel 100 Hz, gyro 98 Hz
-    write_reg(SMPLRT_DIV,   0x04);  // 1 kHz / (1+4) = 200 Hz de salida
-    write_reg(GYRO_CONFIG,  0x00);  // ±250 °/s
-    write_reg(ACCEL_CONFIG, 0x00);  // ±2 g
+    // Verificar que el sensor responde con WHO_AM_I = 0x68
+    uint8_t reg = WHO_AM_I;
+    uint8_t who = 0;
+    if (i2c_write_blocking(_i2c, ADDR, &reg, 1, true)  < 0) return false;
+    if (i2c_read_blocking (_i2c, ADDR, &who, 1, false) < 0) return false;
+    if (who != 0x68) return false;
+
+    write_reg(PWR_MGMT_1,   0x01);
+    write_reg(CONFIG_REG,   0x02);
+    write_reg(SMPLRT_DIV,   0x04);
+    write_reg(GYRO_CONFIG,  0x00);
+    write_reg(ACCEL_CONFIG, 0x00);
     return true;
 }
 

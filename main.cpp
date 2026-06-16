@@ -87,8 +87,21 @@ int main() {
     gpio_pull_up(I2C_SCL);
 
     MPU6050 imu(I2C_PORT);
-    imu.init();
-    s_imu = &imu;
+    bool imu_ok = imu.init();
+    s_imu = imu_ok ? &imu : nullptr;
+
+    // LED indica si el sensor fue encontrado
+    if (imu_ok) {
+        // 1 parpadeo largo = OK
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1); sleep_ms(800);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0); sleep_ms(200);
+    } else {
+        // 3 parpadeos rápidos = sensor no encontrado
+        for (int i = 0; i < 3; i++) {
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1); sleep_ms(150);
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0); sleep_ms(150);
+        }
+    }
 
     BLEPeripheral::init(BLE_DEVICE_NAME);
 

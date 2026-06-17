@@ -57,6 +57,7 @@ bool BLEPeripheral::connected() {
 
 bool BLEPeripheral::send(const uint8_t* data, size_t len) {
     if (s_conn == HCI_CON_HANDLE_INVALID) return false;
-    int rc = att_server_notify(s_conn, NUS_TX_VALUE_HANDLE, data, static_cast<uint16_t>(len));
-    return rc == ERROR_CODE_SUCCESS;
+    if (!att_server_can_send_packet_now(s_conn)) return false;
+    att_server_notify(s_conn, NUS_TX_VALUE_HANDLE, data, static_cast<uint16_t>(len));
+    return true;
 }

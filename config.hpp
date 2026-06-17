@@ -10,7 +10,7 @@ inline constexpr uint  I2C_FREQ   = 400'000;
 // Muestreo
 inline constexpr uint32_t SAMPLE_RATE_HZ     = 200;
 inline constexpr uint32_t SAMPLE_INTERVAL_US = 1'000'000 / SAMPLE_RATE_HZ;  // 5 000 µs
-inline constexpr uint32_t SAMPLES_PER_PACKET = 5;
+inline constexpr uint32_t SAMPLES_PER_PACKET = 1;
 
 // BLE
 inline constexpr char BLE_DEVICE_NAME[] = "BarTracker";

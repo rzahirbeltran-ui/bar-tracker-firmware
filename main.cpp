@@ -1,6 +1,7 @@
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
+#include "hardware/adc.h"
 #include "btstack.h"
 #include <cstring>
 
@@ -21,13 +22,25 @@
 static constexpr uint32_t SAMPLE_BYTES = 16;
 static constexpr uint32_t PACKET_BYTES = SAMPLES_PER_PACKET * SAMPLE_BYTES;
 
-static MPU6050* s_imu = nullptr;
+static MPU6050* s_imu      = nullptr;
 static uint8_t  s_packet[PACKET_BYTES];
-static uint32_t s_count = 0;
+static uint32_t s_count    = 0;
+static uint32_t s_bat_tick = 0;   // contador para lectura de batería (~1 Hz)
 
 static btstack_timer_source_t s_sample_timer;
 static btstack_timer_source_t s_led_timer;
 static bool s_led_state = false;
+
+// ── Leer VSYS/3 en ADC canal 3 → porcentaje LiPo (3.0 V = 0 %, 4.2 V = 100 %)
+static uint8_t read_battery_pct() {
+    adc_select_input(3);
+    uint16_t raw   = adc_read();
+    float    vsys  = (float)raw * 3.3f / 4096.0f * 3.0f;  // VSYS = (raw/4096) * 3.3 * 3
+    int      pct   = (int)((vsys - 3.0f) / (4.2f - 3.0f) * 100.0f);
+    if (pct < 0)   pct = 0;
+    if (pct > 100) pct = 100;
+    return (uint8_t)pct;
+}
 
 // LED: parpadeo lento = advertising, luz fija = conectado
 static void led_callback(btstack_timer_source_t* ts) {
@@ -65,10 +78,15 @@ static void sample_callback(btstack_timer_source_t* ts) {
             }
             s_count = 0;
         }
+
+        // Actualizar batería cada ~1 segundo (200 muestras a 200 Hz)
+        if (++s_bat_tick >= 200) {
+            s_bat_tick = 0;
+            BLEPeripheral::set_battery(read_battery_pct());
+        }
     }
 
-    // Re-arma el timer para la siguiente muestra
-    btstack_run_loop_set_timer(ts, SAMPLE_INTERVAL_US / 1000);  // BTstack usa ms
+    btstack_run_loop_set_timer(ts, SAMPLE_INTERVAL_US / 1000);
     btstack_run_loop_add_timer(ts);
 }
 
@@ -79,20 +97,23 @@ int main() {
         while (true) tight_loop_contents();
     }
 
-    // I2C
+    // I2C para MPU6050
     i2c_init(I2C_PORT, I2C_FREQ);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
+    // ADC para lectura de batería (canal 3 = VSYS/3)
+    adc_init();
+
     MPU6050 imu(I2C_PORT);
     bool imu_ok = imu.init();
     s_imu = imu_ok ? &imu : nullptr;
 
-    // LED indica si el sensor fue encontrado
+    // LED de diagnóstico al boot
     if (imu_ok) {
-        // 1 parpadeo largo = OK
+        // 1 parpadeo largo = sensor OK
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1); sleep_ms(800);
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0); sleep_ms(200);
     } else {
@@ -105,12 +126,10 @@ int main() {
 
     BLEPeripheral::init(BLE_DEVICE_NAME);
 
-    // Timer de muestreo
     btstack_run_loop_set_timer_handler(&s_sample_timer, sample_callback);
     btstack_run_loop_set_timer(&s_sample_timer, SAMPLE_INTERVAL_US / 1000);
     btstack_run_loop_add_timer(&s_sample_timer);
 
-    // Timer de LED
     btstack_run_loop_set_timer_handler(&s_led_timer, led_callback);
     btstack_run_loop_set_timer(&s_led_timer, 500);
     btstack_run_loop_add_timer(&s_led_timer);

@@ -37,6 +37,7 @@ target_include_directories(bar_tracker PRIVATE
 target_link_libraries(bar_tracker
     pico_stdlib
     hardware_i2c
+    hardware_adc
     pico_cyw43_arch_none   # BLE-only: sin lwIP, BTstack maneja su propio run loop
     pico_btstack_ble
     pico_btstack_cyw43
